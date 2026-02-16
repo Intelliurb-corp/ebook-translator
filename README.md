@@ -42,7 +42,7 @@ The plugin uses a JSON configuration file. It searches in the following order:
     "api_key": "YOUR_OPENAI_API_KEY",
     "target_language": "pt-br",
     "context_window": 4096,
-    "context_strategy": "sliding_window",
+    "context_file": "book_context.json",
     "tone": "literal"
 }
 ```
@@ -95,7 +95,7 @@ To translate to French:
 
 ## Features
 - **Structure Preservation**: Keeps all CSS, images, and HTML tags exactly as they were.
-- **Context Maintenance**: Implements strategies for long-form translation consistency.
+- **Context Maintenance**: Supports persistent context history (via `-C` flag) to maintain character and plot consistency across chapters.
 - **Fast & Lightweight**: Developed in C for minimal memory footprint.
 
 ### Context Awareness (New!)
