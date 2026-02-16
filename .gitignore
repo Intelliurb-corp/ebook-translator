@@ -4,6 +4,10 @@ build/
 *.dSYM
 epubtrans
 
+#configuration
+conf/
+config.json
+
 # Temporary and Debug files
 debug_pool/
 temp_epub/
@@ -12,8 +16,15 @@ temp_epub/
 # Generated Output
 output_*.epub
 
-# Ebooks
+# User content
 ebooks/
+conf/config.json
+book_context.json
+*.json
+*.mobi
+*.pub
+*.pdf
+*.epub
 
 
 # System files

@@ -24,7 +24,7 @@ size_t write_callback_dynamic(void *ptr, size_t size, size_t nmemb, void *userda
     return real_size;
 }
 
-char* llm_translate(const char *text, config_t *config) {
+char* llm_translate(const char *text, config_t *config, const char *context_string) {
     if (!text || strlen(text) < 1) return NULL;
 
     // Skip whitespace-only strings (including NBSP 0xC2 0xA0)
@@ -65,8 +65,16 @@ char* llm_translate(const char *text, config_t *config) {
     
     struct json_object *system_msg = json_object_new_object();
     json_object_object_add(system_msg, "role", json_object_new_string("system"));
-    char system_prompt[512];
-    snprintf(system_prompt, sizeof(system_prompt), "Translate the following text to %s. Preserve terminology if provided. Do NOT add any conversational text, just the translation.", config->target_language);
+    char system_prompt[4096];
+    if (context_string && strlen(context_string) > 0) {
+        snprintf(system_prompt, sizeof(system_prompt), 
+            "Translate the text to %s. Preserve formatting.\n"
+            "%s\n" // Inject context here
+            "Do NOT add conversational text.", 
+            config->target_language, context_string);
+    } else {
+        snprintf(system_prompt, sizeof(system_prompt), "Translate the following text to %s. Preserve terminology if provided. Do NOT add any conversational text, just the translation.", config->target_language);
+    }
     json_object_object_add(system_msg, "content", json_object_new_string(system_prompt));
     json_object_array_add(messages, system_msg);
 
@@ -143,25 +151,25 @@ char* llm_translate(const char *text, config_t *config) {
     return translated_text;
 }
 
-void translate_nodes(xmlNode *node, config_t *config) {
+void translate_nodes(xmlNode *node, config_t *config, const char *context_string) {
     xmlNode *cur = NULL;
     for (cur = node; cur; cur = cur->next) {
         if (cur->type == XML_TEXT_NODE) {
-            char *translated = llm_translate((char*)cur->content, config);
+            char *translated = llm_translate((char*)cur->content, config, context_string);
             if (translated) {
                 xmlNodeSetContent(cur, (const xmlChar*)translated);
                 free(translated);
             }
         }
-        translate_nodes(cur->children, config);
+        translate_nodes(cur->children, config, context_string);
     }
 }
 
-int translate_xhtml(const char *path, config_t *config) {
+int translate_xhtml(const char *path, config_t *config, const char *context_string) {
     xmlDocPtr doc = htmlReadFile(path, "UTF-8", HTML_PARSE_RECOVER | HTML_PARSE_NOERROR | HTML_PARSE_NOWARNING);
     if (!doc) return -1;
 
-    translate_nodes(xmlDocGetRootElement(doc), config);
+    translate_nodes(xmlDocGetRootElement(doc), config, context_string);
 
     // Remove any existing XML declaration nodes (PIs) to avoid duplication
     // because xmlSaveFormatFileEnc adds its own.

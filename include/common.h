@@ -15,10 +15,11 @@ typedef struct {
     char *context_strategy;
     char *tone;
     char *api_endpoint;
+    char *context_file;
 } config_t;
 
 config_t* load_config(const char *path);
 void free_config(config_t *config);
-int translate_xhtml(const char *path, config_t *config);
+int translate_xhtml(const char *path, config_t *config, const char *context_string);
 
 #endif // COMMON_H

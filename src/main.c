@@ -1,5 +1,6 @@
 #include "common.h"
 #include "epub.h"
+#include "context.h"
 #include <getopt.h>
 
 void print_usage(const char *progname) {
@@ -8,13 +9,30 @@ void print_usage(const char *progname) {
     printf("  -c, --config <file>    Path to config.json (default: ./conf/config.json)\n");
     printf("  -l, --lang <code>      Target language code (overrides config)\n");
     printf("  -m, --model <name>     LLM model name (overrides config)\n");
+    printf("  -C, --context <file>   Context file path (overrides config)\n");
     printf("  -h, --help             Show this help message\n");
+}
+
+// Helper to read file content for context analysis
+char* read_file_content(const char *path) {
+    FILE *fp = fopen(path, "r");
+    if (!fp) return NULL;
+    fseek(fp, 0, SEEK_END);
+    long size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    if (size <= 0) { fclose(fp); return NULL; }
+    char *buf = malloc(size + 1);
+    fread(buf, 1, size, fp);
+    buf[size] = 0;
+    fclose(fp);
+    return buf;
 }
 
 int main(int argc, char *argv[]) {
     char *config_path = "./conf/config.json";
     char *target_lang = NULL;
     char *model_name = NULL;
+    char *context_file_arg = NULL;
     char *input_file = NULL;
     char *output_file = NULL;
 
@@ -22,16 +40,18 @@ int main(int argc, char *argv[]) {
         {"config", required_argument, 0, 'c'},
         {"lang",   required_argument, 0, 'l'},
         {"model",  required_argument, 0, 'm'},
+        {"context",required_argument, 0, 'C'},
         {"help",   no_argument,       0, 'h'},
         {0, 0, 0, 0}
     };
 
     int opt;
-    while ((opt = getopt_long(argc, argv, "c:l:m:h", long_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "c:l:m:C:h", long_options, NULL)) != -1) {
         switch (opt) {
             case 'c': config_path = optarg; break;
             case 'l': target_lang = optarg; break;
             case 'm': model_name = optarg; break;
+            case 'C': context_file_arg = optarg; break;
             case 'h': print_usage(argv[0]); return 0;
             default: print_usage(argv[0]); return 1;
         }
@@ -85,6 +105,10 @@ int main(int argc, char *argv[]) {
         free(config->model);
         config->model = strdup(model_name);
     }
+    if (context_file_arg) {
+        free(config->context_file);
+        config->context_file = strdup(context_file_arg);
+    }
 
     if (!config->target_language) config->target_language = strdup("en");
     if (!config->model) config->model = strdup("gpt-4o");
@@ -111,6 +135,18 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    // Load or Init Context
+    context_t *ctx = NULL;
+    if (config->context_file) {
+        ctx = load_context(config->context_file);
+        if (ctx) {
+            printf("Loaded context history from %s\n", config->context_file);
+        } else {
+            printf("Context file not found. Starting new context history at %s\n", config->context_file);
+            ctx = create_context();
+        }
+    }
+
     // Iterate spine and translate each XHTML file
     for (int i = 0; i < meta->spine_count; i++) {
         char *idref = meta->spine[i];
@@ -122,14 +158,40 @@ int main(int argc, char *argv[]) {
                 } else {
                     snprintf(xhtml_path, sizeof(xhtml_path), "%s/%s", temp_dir, meta->manifest[j].href);
                 }
-                printf("Translating chapter: %s (%s)...\n", idref, meta->manifest[j].href);
-                if (translate_xhtml(xhtml_path, config) != 0) {
+                
+                printf("Processing chapter %d/%d: %s...\n", i+1, meta->spine_count, idref);
+
+                // Prepare context string for translation
+                char *ctx_for_prompt = NULL;
+                if (ctx) ctx_for_prompt = format_context_for_prompt(ctx);
+
+                // Translate
+                if (translate_xhtml(xhtml_path, config, ctx_for_prompt) != 0) {
                     fprintf(stderr, "Failed to translate %s\n", xhtml_path);
+                }
+                if (ctx_for_prompt) free(ctx_for_prompt);
+
+                // Update Context (only if context_file is active)
+                if (ctx) {
+                    printf("Updating context analysis...\n");
+                    char *content = read_file_content(xhtml_path); // Read the file we just translated (or original? technically it's mixed now but good enough)
+                    if (content) {
+                        // If it's the first major chapter (simplified check), try init if empty
+                        if (!ctx->summary || strlen(ctx->summary) == 0) {
+                             init_context_with_llm(ctx, content, config);
+                        } else {
+                             update_context_with_llm(ctx, content, config);
+                        }
+                        save_context(config->context_file, ctx);
+                        free(content);
+                    }
                 }
                 break;
             }
         }
     }
+
+    if (ctx) free_context(ctx);
 
     const char *final_output = output_file ? output_file : "translated.epub";
     if (archive_epub(final_output, temp_dir) != 0) {

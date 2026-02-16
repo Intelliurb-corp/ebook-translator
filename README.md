@@ -98,6 +98,18 @@ To translate to French:
 - **Context Maintenance**: Implements strategies for long-form translation consistency.
 - **Fast & Lightweight**: Developed in C for minimal memory footprint.
 
+### Context Awareness (New!)
+To enable persistent context tracking (improves consistency but increases API usage/cost):
+
+1.  Add `"context_file": "book_context.json"` to your `config.json`.
+2.  Or use the `-C` flag: `epubtrans -c config.json -C context.json input.epub`
+
+The tool will:
+-   Initialize context from the first chapter (Summary, Characters, Locations).
+-   Update the context file after translating each chapter.
+-   Inject the current context into the LLM prompt for subsequent translations.
+
+## Common Issues
 ## License
 
 This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.

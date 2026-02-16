@@ -10,6 +10,7 @@ void free_config(config_t *config) {
     free(config->context_strategy);
     free(config->tone);
     free(config->api_endpoint);
+    free(config->context_file);
     free(config);
 }
 
@@ -58,6 +59,10 @@ config_t* load_config(const char *path) {
 
     if (json_object_object_get_ex(parsed_json, "api_endpoint", &api_endpoint))
         config->api_endpoint = strdup(json_object_get_string(api_endpoint));
+
+    struct json_object *context_file;
+    if (json_object_object_get_ex(parsed_json, "context_file", &context_file))
+        config->context_file = strdup(json_object_get_string(context_file));
 
     json_object_put(parsed_json);
     return config;
