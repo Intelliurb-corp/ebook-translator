@@ -60,6 +60,12 @@ make
 
 This will create binary `epubtrans` in the current directory.
 
+To install it system-wide (requires sudo):
+```bash
+sudo make install
+```
+Then you can run `epubtrans` from anywhere.
+
 ## Run
 
 To translate an EPUB file:

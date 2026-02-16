@@ -21,4 +21,11 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 clean:
 	rm -rf $(OBJ_DIR)/*.o $(TARGET)
 
-.PHONY: all clean
+install:
+	install -d $(DESTDIR)/usr/local/bin
+	install -m 755 $(TARGET) $(DESTDIR)/usr/local/bin/epubtrans
+
+uninstall:
+	rm -f $(DESTDIR)/usr/local/bin/epubtrans
+
+.PHONY: all clean install uninstall
