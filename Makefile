@@ -24,8 +24,11 @@ clean:
 install:
 	install -d $(DESTDIR)/usr/local/bin
 	install -m 755 $(TARGET) $(DESTDIR)/usr/local/bin/epubtrans
+	install -d $(DESTDIR)/usr/local/etc/ebook-translator
+	install -m 644 conf/config.json $(DESTDIR)/usr/local/etc/ebook-translator/config.json
 
 uninstall:
 	rm -f $(DESTDIR)/usr/local/bin/epubtrans
+	rm -rf $(DESTDIR)/usr/local/etc/ebook-translator/
 
 .PHONY: all clean install uninstall

@@ -60,9 +60,19 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    // 1. Try CLI argument (already handled by getopt)
+    
+    // 2. Try default local path
+    if (access(config_path, F_OK) != 0) {
+        // 3. Try system-wide path
+        if (access("/usr/local/etc/ebook-translator/config.json", F_OK) == 0) {
+            config_path = "/usr/local/etc/ebook-translator/config.json";
+        }
+    }
+
     config_t *config = load_config(config_path);
     if (!config) {
-        fprintf(stderr, "Warning: Using default config values as file was not found or invalid.\n");
+        fprintf(stderr, "Warning: Could not load config from '%s'. Using default values.\n", config_path);
         config = calloc(1, sizeof(config_t));
     }
 

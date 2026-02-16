@@ -29,7 +29,10 @@ This tool is designed for Unix-like environments. On Windows, please use **WSL (
 
 ## Configuration
 
-The plugin uses a JSON configuration file located at `./conf/config.json`.
+The plugin uses a JSON configuration file. It searches in the following order:
+1.  Command-line argument (`-c <file>`)
+2.  Local directory (`./conf/config.json`)
+3.  System-wide directory (`/usr/local/etc/ebook-translator/config.json`)
 
 ### `config.json` Example:
 ```json
