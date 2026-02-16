@@ -65,16 +65,14 @@ char* llm_translate(const char *text, config_t *config, const char *context_stri
     
     struct json_object *system_msg = json_object_new_object();
     json_object_object_add(system_msg, "role", json_object_new_string("system"));
-    char system_prompt[4096];
-    if (context_string && strlen(context_string) > 0) {
-        snprintf(system_prompt, sizeof(system_prompt), 
-            "Translate the text to %s. Preserve formatting.\n"
-            "%s\n" // Inject context here
-            "Do NOT add conversational text.", 
-            config->target_language, context_string);
-    } else {
-        snprintf(system_prompt, sizeof(system_prompt), "Translate the following text to %s. Preserve terminology if provided. Do NOT add any conversational text, just the translation.", config->target_language);
-    }
+    char system_prompt[8192]; // Increased buffer
+    
+    // Use the template from config
+    snprintf(system_prompt, sizeof(system_prompt), 
+        config->prompt_translation,
+        config->target_language,
+        (context_string && strlen(context_string) > 0) ? context_string : ""
+    );
     json_object_object_add(system_msg, "content", json_object_new_string(system_prompt));
     json_object_array_add(messages, system_msg);
 

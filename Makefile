@@ -26,6 +26,9 @@ install:
 	install -m 755 $(TARGET) $(DESTDIR)/usr/local/bin/epubtrans
 	install -d $(DESTDIR)/usr/local/etc/ebook-translator
 	install -m 644 conf/config.json $(DESTDIR)/usr/local/etc/ebook-translator/config.json
+	install -m 644 conf/prompt_context_init.md $(DESTDIR)/usr/local/etc/ebook-translator/prompt_context_init.md
+	install -m 644 conf/prompt_context_update.md $(DESTDIR)/usr/local/etc/ebook-translator/prompt_context_update.md
+	install -m 644 conf/prompt_translation.md $(DESTDIR)/usr/local/etc/ebook-translator/prompt_translation.md
 
 uninstall:
 	rm -f $(DESTDIR)/usr/local/bin/epubtrans

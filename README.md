@@ -34,6 +34,8 @@ The plugin uses a JSON configuration file. It searches in the following order:
 2.  Local directory (`./conf/config.json`)
 3.  System-wide directory (`/usr/local/etc/ebook-translator/config.json`)
 
+You have do create a ./conf/config.json file ou point to location you are using you config.json.
+
 ### `config.json` Example:
 ```json
 {
@@ -97,6 +99,14 @@ To translate to French:
 - **Structure Preservation**: Keeps all CSS, images, and HTML tags exactly as they were.
 - **Context Maintenance**: Supports persistent context history (via `-C` flag) to maintain character and plot consistency across chapters.
 - **Fast & Lightweight**: Developed in C for minimal memory footprint.
+
+### Custom Prompts
+You can customize the LLM prompts by editing the markdown files in `conf/`:
+-   `prompt_context_init.md`: Used to extract initial context from the first chapter.
+-   `prompt_context_update.md`: Used to update context with new chapter content.
+-   `prompt_translation.md`: Used for the actual translation.
+
+These files are loaded relative to the executable or from `/usr/local/etc/ebook-translator/`. If missing, built-in defaults are used.
 
 ### Context Awareness (New!)
 To enable persistent context tracking (improves consistency but increases API usage/cost):

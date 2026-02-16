@@ -173,16 +173,7 @@ static char* perform_llm_request(const char *system_prompt, const char *user_con
 }
 
 int init_context_with_llm(context_t *ctx, const char *initial_text, config_t *config) {
-    const char *prompt = 
-        "You are a literary assistant. Analyze the following text (beginning of a book) "
-        "and extract the following information in JSON format:\n"
-        "{\n"
-        "  \"summary\": \"Brief summary of the opening\",\n"
-        "  \"characters\": \"List of characters mentioned with brief description\",\n"
-        "  \"locations\": \"List of locations mentioned\",\n"
-        "  \"jargon\": \"Specific terms, dates, or author style notes\"\n"
-        "}\n"
-        "Do not include any extra text.";
+    const char *prompt = config->prompt_context_init;
         
     char *json_response = perform_llm_request(prompt, initial_text, config);
     if (!json_response) return -1;
@@ -207,17 +198,9 @@ int init_context_with_llm(context_t *ctx, const char *initial_text, config_t *co
 }
 
 int update_context_with_llm(context_t *ctx, const char *new_text, config_t *config) {
-    char system_prompt[2048];
+    char system_prompt[8192]; // Increased buffer for template + data
     snprintf(system_prompt, sizeof(system_prompt),
-        "You are a helpful assistant maintaining the context of a book translation.\n"
-        "Current Context:\n"
-        "Summary: %s\n"
-        "Characters: %s\n"
-        "Locations: %s\n"
-        "Jargon: %s\n"
-        "\n"
-        "Task: Read the NEW TEXT below and UPDATE the context. Add new characters, update plot summary, etc.\n"
-        "Return the updated context in the SAME JSON format.",
+        config->prompt_context_update,
         ctx->summary ? ctx->summary : "",
         ctx->characters ? ctx->characters : "",
         ctx->locations ? ctx->locations : "",

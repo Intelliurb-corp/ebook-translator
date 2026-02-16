@@ -11,7 +11,37 @@ void free_config(config_t *config) {
     free(config->tone);
     free(config->api_endpoint);
     free(config->context_file);
+    free(config->prompt_context_init);
+    free(config->prompt_context_update);
+    free(config->prompt_translation);
     free(config);
+}
+
+
+// Helper to read prompt file
+static char* read_prompt(const char *filename) {
+    // Try local conf/ first
+    char path[1024];
+    snprintf(path, sizeof(path), "./conf/%s", filename);
+    FILE *f = fopen(path, "r");
+    if (!f) {
+        // Try system path
+        snprintf(path, sizeof(path), "/usr/local/etc/ebook-translator/%s", filename);
+        f = fopen(path, "r");
+    }
+    
+    if (!f) return NULL;
+    
+    fseek(f, 0, SEEK_END);
+    long length = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char *buffer = malloc(length + 1);
+    if (buffer) {
+        fread(buffer, 1, length, f);
+        buffer[length] = 0;
+    }
+    fclose(f);
+    return buffer;
 }
 
 config_t* load_config(const char *path) {
@@ -65,5 +95,15 @@ config_t* load_config(const char *path) {
         config->context_file = strdup(json_object_get_string(context_file));
 
     json_object_put(parsed_json);
+
+    config->prompt_context_init = read_prompt("prompt_context_init.md");
+    config->prompt_context_update = read_prompt("prompt_context_update.md");
+    config->prompt_translation = read_prompt("prompt_translation.md");
+
+    // Defaults if files missing (hardcoded fallbacks)
+    if (!config->prompt_context_init) config->prompt_context_init = strdup("You are a literary assistant. Analyze the text and extract: summary, characters, locations, jargon. JSON format.");
+    if (!config->prompt_context_update) config->prompt_context_update = strdup("Update the context (summary, characters, locations, jargon) based on new text. Return JSON.");
+    if (!config->prompt_translation) config->prompt_translation = strdup("Translate to %s. Preserve formatting. %s");
+
     return config;
 }
