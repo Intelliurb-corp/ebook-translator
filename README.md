@@ -18,6 +18,15 @@ sudo apt-get update
 sudo apt-get install build-essential pkg-config libzip-dev libxml2-dev libjson-c-dev libcurl4-openssl-dev
 ```
 
+**macOS installation (via Homebrew):**
+```bash
+brew install libzip libxml2 json-c curl pkg-config
+```
+*Note: You may need to set `PKG_CONFIG_PATH` if libraries are not found automatically.*
+
+**Windows:**
+This tool is designed for Unix-like environments. On Windows, please use **WSL (Windows Subsystem for Linux)** and follow the **Ubuntu/Debian** instructions above.
+
 ## Configuration
 
 The plugin uses a JSON configuration file located at `./conf/config.json`.
