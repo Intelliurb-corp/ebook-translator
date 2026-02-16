@@ -1,0 +1,22 @@
+# Build artifacts
+build/
+*.o
+*.dSYM
+epubtrans
+
+# Temporary and Debug files
+debug_pool/
+temp_epub/
+*.log
+
+# Generated Output
+output_*.epub
+
+# Ebooks
+ebooks/
+
+
+# System files
+.DS_Store
+.vscode/
+.idea/

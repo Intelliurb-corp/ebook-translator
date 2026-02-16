@@ -1,0 +1,79 @@
+# EPUB Translation Plugin (C)
+
+A high-performance EPUB translation tool written in C for Unix-like systems. It uses Large Language Models (LLMs) to translate ebook content while strictly preserving formatting, CSS, and metadata structure.
+
+Made with gemini 3.
+
+## Prerequisites
+
+You will need the following libraries installed on your system:
+- `libzip`: For EPUB (ZIP) handling.
+- `libxml2`: For XHTML and XML manifest parsing.
+- `json-c`: For configuration file parsing.
+- `libcurl`: For API communication with LLM providers.
+
+**Ubuntu/Debian installation:**
+```bash
+sudo apt-get update
+sudo apt-get install build-essential pkg-config libzip-dev libxml2-dev libjson-c-dev libcurl4-openssl-dev
+```
+
+## Configuration
+
+The plugin uses a JSON configuration file located at `./conf/config.json`.
+
+### `config.json` Example:
+```json
+{
+    "llm_provider": "openai",
+    "model": "gpt-4o",
+    "api_key": "YOUR_OPENAI_API_KEY",
+    "target_language": "pt-br",
+    "context_window": 4096,
+    "context_strategy": "sliding_window",
+    "tone": "literal"
+}
+```
+
+### CLI Overrides:
+Command-line parameters take precedence over the configuration file:
+- `-l, --lang <code>`: Override the target language (e.g., `-l fr`).
+- `-m, --model <name>`: Override the LLM model.
+- `-c, --config <file>`: Use a custom configuration file path.
+
+## Build
+
+To compile the project, simply run `make` in the root directory:
+
+```bash
+make
+```
+
+This will create binary `epubtrans` in the current directory.
+
+## Run
+
+To translate an EPUB file:
+
+```bash
+./epubtrans input.epub output.epub
+```
+
+To translate with a specific language override:
+
+```bash
+./epubtrans -l pt-br input.epub translated_output.epub
+```
+
+## Features
+- **Structure Preservation**: Keeps all CSS, images, and HTML tags exactly as they were.
+- **Context Maintenance**: Implements strategies for long-form translation consistency.
+- **Fast & Lightweight**: Developed in C for minimal memory footprint.
+
+## License
+
+This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
+
+[![CC BY-NC-SA 4.0](https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png)](http://creativecommons.org/licenses/by-nc-sa/4.0/)
+
+View the full license at [http://creativecommons.org/licenses/by-nc-sa/4.0/](http://creativecommons.org/licenses/by-nc-sa/4.0/) or see the [LICENSE](LICENSE) file.
