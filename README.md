@@ -74,6 +74,16 @@ To translate with a specific language override:
 ./epubtrans -l pt-br input.epub translated_output.epub
 ```
 
+To translate to Spanish:
+```bash
+./epubtrans -l es input.epub output_es.epub
+```
+
+To translate to French:
+```bash
+./epubtrans -l fr input.epub output_fr.epub
+```
+
 ## Features
 - **Structure Preservation**: Keeps all CSS, images, and HTML tags exactly as they were.
 - **Context Maintenance**: Implements strategies for long-form translation consistency.
