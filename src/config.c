@@ -52,8 +52,8 @@ config_t* load_config(const char *path) {
     }
 
     struct json_object *parsed_json;
-    struct json_object *llm_provider, *model, *api_key, *target_language, *context_window, *context_strategy, *tone, *api_endpoint;
-
+    struct json_object *llm_provider, *model, *api_key, *target_language, *context_window, *context_strategy, *tone, *api_endpoint, *sliding_window_size;
+    
     char buffer[4096];
     fread(buffer, 1, sizeof(buffer), fp);
     fclose(fp);
@@ -89,6 +89,9 @@ config_t* load_config(const char *path) {
 
     if (json_object_object_get_ex(parsed_json, "api_endpoint", &api_endpoint))
         config->api_endpoint = strdup(json_object_get_string(api_endpoint));
+
+    if (json_object_object_get_ex(parsed_json, "sliding_window_size", &sliding_window_size))
+        config->sliding_window_size = json_object_get_int(sliding_window_size);
 
     struct json_object *context_file;
     if (json_object_object_get_ex(parsed_json, "context_file", &context_file))

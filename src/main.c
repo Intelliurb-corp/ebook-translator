@@ -1,7 +1,13 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "common.h"
 #include "epub.h"
 #include "context.h"
+#include "context_strategy.h"
 #include <getopt.h>
+
+#define MAX_STRATEGIES 5
 
 void print_usage(const char *progname) {
     printf("Usage: %s [options] <input.epub> [output.epub]\n", progname);
@@ -135,15 +141,31 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // Load or Init Context
-    context_t *ctx = NULL;
+    // Initialize Strategies
+    ContextStrategy *strategies[MAX_STRATEGIES];
+    int strategy_count = 0;
+
+    // 1. History Strategy
     if (config->context_file) {
-        ctx = load_context(config->context_file);
-        if (ctx) {
-            printf("Loaded context history from %s\n", config->context_file);
+        ContextStrategy *hist = create_history_strategy();
+        hist->state = hist->init(config);
+        if (hist->state) {
+            strategies[strategy_count++] = hist;
+            printf("Strategy Enabled: %s\n", hist->name);
         } else {
-            printf("Context file not found. Starting new context history at %s\n", config->context_file);
-            ctx = create_context();
+            free(hist);
+        }
+    }
+
+    // 2. Sliding Window Strategy
+    if (config->sliding_window_size > 0) {
+        ContextStrategy *win = create_sliding_window_strategy();
+        win->state = win->init(config);
+        if (win->state) {
+            strategies[strategy_count++] = win;
+            printf("Strategy Enabled: %s\n", win->name);
+        } else {
+            free(win);
         }
     }
 
@@ -161,37 +183,50 @@ int main(int argc, char *argv[]) {
                 
                 printf("Processing chapter %d/%d: %s...\n", i+1, meta->spine_count, idref);
 
-                // Prepare context string for translation
-                char *ctx_for_prompt = NULL;
-                if (ctx) ctx_for_prompt = format_context_for_prompt(ctx);
+                // Prepare context string from ALL strategies
+                // We'll concatenate them
+                char *combined_context = calloc(1, 1);
+                for (int s = 0; s < strategy_count; s++) {
+                    char *prompt_chunk = strategies[s]->get_prompt(strategies[s]->state, config);
+                    if (prompt_chunk) {
+                        size_t new_len = strlen(combined_context) + strlen(prompt_chunk) + 2;
+                        combined_context = realloc(combined_context, new_len);
+                        strcat(combined_context, prompt_chunk);
+                        strcat(combined_context, "\n"); // Separator
+                        free(prompt_chunk);
+                    }
+                }
 
                 // Translate
-                if (translate_xhtml(xhtml_path, config, ctx_for_prompt) != 0) {
+                if (translate_xhtml(xhtml_path, config, combined_context) != 0) {
                     fprintf(stderr, "Failed to translate %s\n", xhtml_path);
                 }
-                if (ctx_for_prompt) free(ctx_for_prompt);
+                free(combined_context);
 
-                // Update Context (only if context_file is active)
-                if (ctx) {
-                    printf("Updating context analysis...\n");
-                    char *content = read_file_content(xhtml_path); // Read the file we just translated (or original? technically it's mixed now but good enough)
-                    if (content) {
-                        // If it's the first major chapter (simplified check), try init if empty
-                        if (!ctx->summary || strlen(ctx->summary) == 0) {
-                             init_context_with_llm(ctx, content, config);
-                        } else {
-                             update_context_with_llm(ctx, content, config);
-                        }
-                        save_context(config->context_file, ctx);
-                        free(content);
+                // Update Strategies
+                // We read the translated file? Or original? 
+                // Currently context.c uses original for summary, but sliding window might want translated...
+                // The current implementation of translate_xhtml replaces content IN PLACE.
+                // So reading xhtml_path NOW gives us TRANSLATED content (mostly).
+                // Actually, translate_xhtml writes to the file.
+                
+                char *content = read_file_content(xhtml_path); 
+                if (content) {
+                    for (int s = 0; s < strategy_count; s++) {
+                        strategies[s]->update(strategies[s]->state, content, config);
                     }
+                    free(content);
                 }
                 break;
             }
         }
     }
 
-    if (ctx) free_context(ctx);
+    // Cleanup Strategies
+    for (int s = 0; s < strategy_count; s++) {
+        strategies[s]->cleanup(strategies[s]->state);
+        free(strategies[s]);
+    }
 
     const char *final_output = output_file ? output_file : "translated.epub";
     if (archive_epub(final_output, temp_dir) != 0) {

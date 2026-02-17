@@ -108,7 +108,14 @@ You can customize the LLM prompts by editing the markdown files in `conf/`:
 
 These files are loaded relative to the executable or from `/usr/local/etc/ebook-translator/`. If missing, built-in defaults are used.
 
-### Context Awareness (New!)
+### Context Strategies
+The tool now supports multiple context strategies simultaneously:
+1.  **History Strategy**: Maintains a high-level summary, character list, and glossary in `book_context.json`. Great for long-term consistency.
+2.  **Sliding Window**: Keeps the last `N` characters of translated text in the prompt. Great for immediate flow and callbacks.
+
+To enable Sliding Window, add `"sliding_window_size": 2000` to your `config.json`.
+
+### Context Awareness (History)
 To enable persistent context tracking (improves consistency but increases API usage/cost):
 
 1.  Add `"context_file": "book_context.json"` to your `config.json`.

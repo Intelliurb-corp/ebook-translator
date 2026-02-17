@@ -19,6 +19,7 @@ typedef struct {
     char *prompt_context_init;
     char *prompt_context_update;
     char *prompt_translation;
+    int sliding_window_size;
 } config_t;
 
 config_t* load_config(const char *path);
